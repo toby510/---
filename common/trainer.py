@@ -25,22 +25,27 @@ class Trainer:
         loss_count = 0
 
         start_time = time.time()
+        #max_epoch=300，表示每个样本需要训练多少轮
         for epoch in range(max_epoch):
             # 打乱
             idx = numpy.random.permutation(numpy.arange(data_size))
             x = x[idx]
             t = t[idx]
 
+            #max_iters=300/30=10，表示每一轮中，所有样本总共需要迭代多少次，每批batch_size个，总共需要max_iters次数
             for iters in range(max_iters):
                 batch_x = x[iters*batch_size:(iters+1)*batch_size]
                 batch_t = t[iters*batch_size:(iters+1)*batch_size]
 
-                # 计算梯度，更新参数
+                #正向传播
                 loss = model.forward(batch_x, batch_t)
+                #反向传播
                 model.backward()
+                #计算梯度
                 params, grads = remove_duplicate(model.params, model.grads)  # 将共享的权重整合为1个
                 if max_grad is not None:
                     clip_grads(grads, max_grad)
+                #更新参数
                 optimizer.update(params, grads)
                 total_loss += loss
                 loss_count += 1

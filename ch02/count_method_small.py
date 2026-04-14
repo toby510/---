@@ -1,10 +1,16 @@
 # coding: utf-8
+# SVD的目的：把高维稀疏 PPMI 矩阵 → 低维稠密词向量
+"""SVD 做了一件事：
+#把又大又吵的 W，拆成 3 个干净的矩阵
+U 矩阵：词向量矩阵（最重要！）
+S 矩阵：重要程度（从大到小排序）
+V 矩阵：上下文向量矩阵
+"""
 import sys
 sys.path.append('..')
 import numpy as np
 import matplotlib.pyplot as plt
 from common.util import preprocess, create_co_matrix, ppmi
-
 
 text = 'You say goodbye and I say hello.'
 corpus, word_to_id, id_to_word = preprocess(text)
@@ -12,7 +18,7 @@ vocab_size = len(id_to_word)
 C = create_co_matrix(corpus, vocab_size, window_size=1)
 W = ppmi(C)
 
-# SVD
+# SVD的目的：把高维稀疏 PPMI 矩阵 → 低维稠密词向量
 U, S, V = np.linalg.svd(W)
 
 np.set_printoptions(precision=3)  # 有效位数为3位
@@ -23,5 +29,5 @@ print(U[0])
 # plot
 for word, word_id in word_to_id.items():
     plt.annotate(word, (U[word_id, 0], U[word_id, 1]))
-plt.scatter(U[:,0], U[:,1], alpha=0.5)
+plt.scatter(U[:, 0], U[:, 1], alpha=0.5)
 plt.show()
