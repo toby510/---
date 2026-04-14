@@ -45,7 +45,7 @@ class Trainer:
                 total_loss += loss
                 loss_count += 1
 
-                # 评价
+                # 评价≤
                 if (eval_interval is not None) and (iters % eval_interval) == 0:
                     avg_loss = total_loss / loss_count
                     elapsed_time = time.time() - start_time
