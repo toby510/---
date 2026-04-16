@@ -50,6 +50,8 @@ class UnigramSampler:
         self.word_p = np.power(self.word_p, power)
         self.word_p /= np.sum(self.word_p)
 
+
+    # 获取负采样样本：功能：给每个 batch 里的样本，挑出【不是目标词】的负样本；规则：按词频概率选，但绝对不能选到目标词自己！
     def get_negative_sample(self, target):
         batch_size = target.shape[0]
 
@@ -59,8 +61,11 @@ class UnigramSampler:
             for i in range(batch_size):
                 p = self.word_p.copy()
                 target_idx = target[i]
+                # 目标概率设置为0
                 p[target_idx] = 0
+                # 负样本概率为：重新归一化概率（总和 = 1），因为把目标词概率设为 0 了，要重新算比例
                 p /= p.sum()
+                # 随机挑选，入参p表示按概率筛选，针对目标概率为0，所以不会被选中
                 negative_sample[i, :] = np.random.choice(self.vocab_size, size=self.sample_size, replace=False, p=p)
         else:
             # 在用GPU(cupy）计算时，优先速度
@@ -85,16 +90,20 @@ class NegativeSamplingLoss:
 
     def forward(self, h, target):
         batch_size = target.shape[0]
+
         negative_sample = self.sampler.get_negative_sample(target)
 
         # 正例的正向传播
         score = self.embed_dot_layers[0].forward(h, target)
+        # 负采样，正确标签=0
         correct_label = np.ones(batch_size, dtype=np.int32)
+        # 计算损失
         loss = self.loss_layers[0].forward(score, correct_label)
 
         # 负例的正向传播
         negative_label = np.zeros(batch_size, dtype=np.int32)
         for i in range(self.sample_size):
+            # 取第i列的所有行，即取所有批次的第几个样本。比如i=0,表示取所有批次的第一个样本
             negative_target = negative_sample[:, i]
             score = self.embed_dot_layers[1 + i].forward(h, negative_target)
             loss += self.loss_layers[1 + i].forward(score, negative_label)
